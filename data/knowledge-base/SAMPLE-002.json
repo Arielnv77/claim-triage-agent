@@ -1,0 +1,14 @@
+{
+  "claim_id": "SAMPLE-002",
+  "damage_type": "water_damage",
+  "severity": "severe",
+  "affected_areas": [
+    "basement",
+    "laundry room"
+  ],
+  "policy_type": "premium_homeowner",
+  "description": "Heavy rain caused groundwater to seep into the basement, leaving 20 cm of standing water.",
+  "resolution": "Approved: water extraction, drywall and carpet replacement",
+  "repair_cost_actual": 21000,
+  "_note": "Synthetic sample claim."
+}

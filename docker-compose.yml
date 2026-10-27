@@ -1,0 +1,48 @@
+services:
+  # Vector database for storing embedded historical claims
+  qdrant:
+    image: qdrant/qdrant:v1.12.6
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # Backend API (FastAPI)
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+    # Loads the LLM settings from .env (the only external dependency)
+    env_file:
+      - .env
+    environment:
+      # Internal Qdrant URL inside the Compose network
+      - QDRANT_URL=http://qdrant:6333
+    volumes:
+      # Knowledge base with historical claims
+      - ./data:/app/data
+      # Cost and coverage lookup tables
+      - ./tools:/app/tools
+    depends_on:
+      qdrant:
+        condition: service_started
+    # Healthy only once /api/v1/health answers, so "make setup" waits for
+    # the embedding model and the Qdrant ingestion to finish at startup
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  # Static web UI (nginx) that calls the API from the browser
+  ui:
+    build: ./ui
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  qdrant_data:

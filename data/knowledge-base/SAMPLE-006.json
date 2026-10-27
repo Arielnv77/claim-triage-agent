@@ -1,0 +1,15 @@
+{
+  "claim_id": "SAMPLE-006",
+  "damage_type": "storm_damage",
+  "severity": "catastrophic",
+  "affected_areas": [
+    "roof",
+    "bedroom",
+    "attic"
+  ],
+  "policy_type": "premium_homeowner",
+  "description": "A fallen tree crushed part of the roof during a storm, exposing the attic and a bedroom to rain.",
+  "resolution": "Approved: structural repair and interior restoration",
+  "repair_cost_actual": 95000,
+  "_note": "Synthetic sample claim."
+}

@@ -1,0 +1,13 @@
+{
+  "claim_id": "SAMPLE-008",
+  "damage_type": "vandalism",
+  "severity": "minor",
+  "affected_areas": [
+    "exterior wall"
+  ],
+  "policy_type": "landlord",
+  "description": "Graffiti was sprayed across the exterior wall of the building.",
+  "resolution": "Approved: professional cleaning and repainting",
+  "repair_cost_actual": 900,
+  "_note": "Synthetic sample claim."
+}

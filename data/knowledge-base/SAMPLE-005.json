@@ -1,0 +1,13 @@
+{
+  "claim_id": "SAMPLE-005",
+  "damage_type": "storm_damage",
+  "severity": "moderate",
+  "affected_areas": [
+    "roof"
+  ],
+  "policy_type": "basic_homeowner",
+  "description": "Strong winds tore off several roof shingles and damaged a gutter.",
+  "resolution": "Approved: roof section and gutter replaced",
+  "repair_cost_actual": 4800,
+  "_note": "Synthetic sample claim."
+}

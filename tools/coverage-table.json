@@ -1,0 +1,59 @@
+{
+  "_description": "Synthetic sample data. Coverage terms per policy type.",
+  "policies": {
+    "basic_homeowner": {
+      "covered_categories": [
+        "fire_damage",
+        "storm_damage"
+      ],
+      "deductible": 2000,
+      "max_payout": 150000,
+      "notes": "Covers fire and storm only."
+    },
+    "standard_homeowner": {
+      "covered_categories": [
+        "water_damage",
+        "fire_damage",
+        "storm_damage",
+        "break_in"
+      ],
+      "deductible": 1000,
+      "max_payout": 300000,
+      "notes": "Sudden water damage only; gradual leaks are excluded."
+    },
+    "premium_homeowner": {
+      "covered_categories": [
+        "water_damage",
+        "fire_damage",
+        "storm_damage",
+        "break_in",
+        "vandalism",
+        "other"
+      ],
+      "deductible": 500,
+      "max_payout": 750000,
+      "notes": "Broadest coverage."
+    },
+    "renters": {
+      "covered_categories": [
+        "fire_damage",
+        "break_in",
+        "vandalism"
+      ],
+      "deductible": 500,
+      "max_payout": 50000,
+      "notes": "Personal contents only, not the building."
+    },
+    "landlord": {
+      "covered_categories": [
+        "fire_damage",
+        "storm_damage",
+        "vandalism",
+        "water_damage"
+      ],
+      "deductible": 1500,
+      "max_payout": 500000,
+      "notes": "Building only; tenant contents are excluded."
+    }
+  }
+}

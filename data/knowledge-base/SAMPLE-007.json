@@ -1,0 +1,14 @@
+{
+  "claim_id": "SAMPLE-007",
+  "damage_type": "break_in",
+  "severity": "moderate",
+  "affected_areas": [
+    "front door",
+    "living room"
+  ],
+  "policy_type": "renters",
+  "description": "Burglars forced the front door and stole electronics from the living room.",
+  "resolution": "Approved: door replaced and contents reimbursed per policy",
+  "repair_cost_actual": 6100,
+  "_note": "Synthetic sample claim."
+}

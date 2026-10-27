@@ -1,0 +1,13 @@
+{
+  "claim_id": "SAMPLE-004",
+  "damage_type": "fire_damage",
+  "severity": "minor",
+  "affected_areas": [
+    "garage"
+  ],
+  "policy_type": "basic_homeowner",
+  "description": "An electrical short in the garage scorched a wall outlet and part of the drywall.",
+  "resolution": "Approved: electrical repair and drywall patch",
+  "repair_cost_actual": 1900,
+  "_note": "Synthetic sample claim."
+}

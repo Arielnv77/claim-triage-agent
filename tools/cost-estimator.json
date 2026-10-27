@@ -1,0 +1,113 @@
+{
+  "_description": "Synthetic sample data. Repair cost range per affected area, in USD.",
+  "cost_matrix": {
+    "water_damage": {
+      "minor": {
+        "min_per_area": 800,
+        "max_per_area": 1600
+      },
+      "moderate": {
+        "min_per_area": 3200,
+        "max_per_area": 6400
+      },
+      "severe": {
+        "min_per_area": 9600,
+        "max_per_area": 19200
+      },
+      "catastrophic": {
+        "min_per_area": 24000,
+        "max_per_area": 48000
+      }
+    },
+    "fire_damage": {
+      "minor": {
+        "min_per_area": 1500,
+        "max_per_area": 3000
+      },
+      "moderate": {
+        "min_per_area": 6000,
+        "max_per_area": 12000
+      },
+      "severe": {
+        "min_per_area": 18000,
+        "max_per_area": 36000
+      },
+      "catastrophic": {
+        "min_per_area": 45000,
+        "max_per_area": 90000
+      }
+    },
+    "storm_damage": {
+      "minor": {
+        "min_per_area": 1000,
+        "max_per_area": 2000
+      },
+      "moderate": {
+        "min_per_area": 4000,
+        "max_per_area": 8000
+      },
+      "severe": {
+        "min_per_area": 12000,
+        "max_per_area": 24000
+      },
+      "catastrophic": {
+        "min_per_area": 30000,
+        "max_per_area": 60000
+      }
+    },
+    "break_in": {
+      "minor": {
+        "min_per_area": 500,
+        "max_per_area": 1000
+      },
+      "moderate": {
+        "min_per_area": 2000,
+        "max_per_area": 4000
+      },
+      "severe": {
+        "min_per_area": 6000,
+        "max_per_area": 12000
+      },
+      "catastrophic": {
+        "min_per_area": 15000,
+        "max_per_area": 30000
+      }
+    },
+    "vandalism": {
+      "minor": {
+        "min_per_area": 400,
+        "max_per_area": 800
+      },
+      "moderate": {
+        "min_per_area": 1600,
+        "max_per_area": 3200
+      },
+      "severe": {
+        "min_per_area": 4800,
+        "max_per_area": 9600
+      },
+      "catastrophic": {
+        "min_per_area": 12000,
+        "max_per_area": 24000
+      }
+    },
+    "other": {
+      "minor": {
+        "min_per_area": 600,
+        "max_per_area": 1200
+      },
+      "moderate": {
+        "min_per_area": 2400,
+        "max_per_area": 4800
+      },
+      "severe": {
+        "min_per_area": 7200,
+        "max_per_area": 14400
+      },
+      "catastrophic": {
+        "min_per_area": 18000,
+        "max_per_area": 36000
+      }
+    }
+  }
+}

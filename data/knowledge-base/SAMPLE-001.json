@@ -1,0 +1,13 @@
+{
+  "claim_id": "SAMPLE-001",
+  "damage_type": "water_damage",
+  "severity": "moderate",
+  "affected_areas": [
+    "kitchen"
+  ],
+  "policy_type": "standard_homeowner",
+  "description": "A burst pipe under the kitchen sink flooded the floor and soaked the lower cabinets.",
+  "resolution": "Approved: cabinets and flooring replaced",
+  "repair_cost_actual": 5200,
+  "_note": "Synthetic sample claim."
+}

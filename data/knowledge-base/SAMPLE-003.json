@@ -1,0 +1,14 @@
+{
+  "claim_id": "SAMPLE-003",
+  "damage_type": "fire_damage",
+  "severity": "severe",
+  "affected_areas": [
+    "kitchen",
+    "living room"
+  ],
+  "policy_type": "standard_homeowner",
+  "description": "A grease fire on the stove spread to the kitchen cabinets and left smoke damage in the living room.",
+  "resolution": "Approved: kitchen rebuild and smoke remediation",
+  "repair_cost_actual": 38000,
+  "_note": "Synthetic sample claim."
+}

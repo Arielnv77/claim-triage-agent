@@ -1,0 +1,20 @@
+# Web framework used to build the API
+fastapi==0.115.6
+# ASGI server that runs the FastAPI application
+uvicorn[standard]==0.34.0
+# Multipart form parsing (image and document uploads)
+python-multipart==0.0.20
+# Client for the Qdrant vector database
+qdrant-client==1.12.1
+# Local embeddings (no external API required)
+fastembed==0.4.2
+# OpenAI-compatible client for the LLM API
+openai==1.59.6
+# Image decoding used to validate the JPEG/PNG attachments
+pillow==10.4.0
+# Text extraction from the attached PDF documents
+pypdf==5.1.0
+# Test framework for the application
+pytest==8.3.4
+# FastAPI test client (TestClient)
+httpx==0.28.1

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claim Triage Assistant</title>
+<style>
+  :root {
+    --bg: #eef1f5;
+    --card: #ffffff;
+    --line: #dde1e7;
+    --line-soft: #e8ebf0;
+    --text: #1b2430;
+    --muted: #68717f;
+    --accent: #1f5fbf;
+    --ok-bg: #e5f4ea; --ok-text: #1b6b3a; --ok-line: #bfe3cc;
+    --bad-bg: #fcebe9; --bad-text: #9f271d; --bad-line: #f3cdc8;
+    --warn-bg: #fdf3e0; --warn-text: #8a5a08; --warn-line: #f2dcb4;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 20px 64px;
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+
+  /* ---- Page header ---- */
+  h1 {
+    font-size: 25px; font-weight: 650; letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+  p.lead { margin: 0; color: var(--muted); font-size: 14.5px; }
+  main > p.lead { margin-bottom: 28px; }
+
+  /* ---- Card sections ---- */
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(27, 36, 48, .05), 0 1px 10px rgba(27, 36, 48, .03);
+  }
+  h2 {
+    font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--accent);
+    margin: 0 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  /* ---- Form ---- */
+  label { display: block; font-weight: 600; font-size: 13.5px; margin: 20px 0 7px; }
+  label:first-of-type { margin-top: 0; }
+  textarea, select, input[type=file] {
+    width: 100%; padding: 9px 11px; font: inherit; color: inherit;
+    border: 1px solid var(--line); border-radius: 7px; background: #fcfdfe;
+  }
+  textarea { min-height: 120px; resize: vertical; line-height: 1.55; }
+  textarea:focus, select:focus, input[type=file]:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent);
+  }
+  select { appearance: none; background-image: none; cursor: pointer; }
+  input[type=file] { padding: 7px 11px; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+  input[type=file]::file-selector-button {
+    margin-right: 12px; padding: 5px 12px; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--accent); background: #eef3fc;
+    border: 1px solid var(--line); border-radius: 5px; cursor: pointer;
+  }
+  button {
+    margin-top: 26px; padding: 11px 22px; font: inherit; font-weight: 600;
+    color: #fff; background: var(--accent);
+    border: 0; border-radius: 7px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: #174a96; }
+  button:disabled { opacity: .5; cursor: progress; }
+  .hint { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+
+  /* ---- Status / error states ---- */
+  #status p { margin: 0; color: var(--muted); }
+  .error { border-color: var(--bad-line); background: #fffbfb; }
+  .error h2 { color: var(--bad-text); border-bottom-color: var(--bad-line); }
+  #error-message { margin: 0; font-weight: 600; }
+  /* Plain-language reasons, one per failed check */
+  .reasons { margin: 10px 0 0; padding-left: 20px; }
+  .reasons li { margin-bottom: 4px; }
+  .reasons li:last-child { margin-bottom: 0; }
+  /* Raw JSON stays reachable but out of the way */
+  #error-technical > summary {
+    margin-top: 14px; cursor: pointer;
+    font-size: 12.5px; font-weight: 600; color: var(--muted);
+  }
+  #error-technical > summary:hover { color: var(--text); }
+
+  /* ---- Key / value lists ---- */
+  dl { margin: 0; display: grid; grid-template-columns: minmax(150px, 200px) 1fr; gap: 0 20px; }
+  dt, dd { padding: 9px 0; border-top: 1px solid var(--line-soft); }
+  dl > dt:first-child, dl > dt:first-child + dd { border-top: 0; padding-top: 0; }
+  dt { font-weight: 600; font-size: 13.5px; color: var(--muted); }
+  dd { margin: 0; min-width: 0; }
+
+  /* ---- Pass / FAIL badges ---- */
+  .badge {
+    display: inline-block; padding: 1px 10px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    border: 1px solid transparent; border-radius: 999px;
+  }
+  .badge.ok  { color: var(--ok-text);  background: var(--ok-bg);  border-color: var(--ok-line); }
+  .badge.bad { color: var(--bad-text); background: var(--bad-bg); border-color: var(--bad-line); }
+
+  /* ---- Level tags (urgency / severity) ---- */
+  .level {
+    display: inline-block; padding: 1px 10px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    border: 1px solid transparent; border-radius: 999px;
+  }
+  .level.low  { color: var(--ok-text);   background: var(--ok-bg);   border-color: var(--ok-line); }
+  .level.mid  { color: var(--warn-text); background: var(--warn-bg); border-color: var(--warn-line); }
+  .level.high { color: var(--bad-text);  background: var(--bad-bg);  border-color: var(--bad-line); }
+
+  /* ---- Affected-area pills ---- */
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    display: inline-block; padding: 2px 11px;
+    font-size: 12.5px; font-weight: 500;
+    color: var(--text); background: #f2f5f9;
+    border: 1px solid var(--line); border-radius: 999px;
+  }
+
+  /* ---- Money range ---- */
+  .money { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* ---- Similar-claims table ---- */
+  table.claims { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.claims th, table.claims td {
+    text-align: left; padding: 7px 10px 7px 0; vertical-align: top;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  table.claims th {
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted);
+  }
+  table.claims tr:last-child td { border-bottom: 0; }
+  table.claims td.claim-id { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+  table.claims td.score { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---- Summary card ---- */
+  #summary { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 18px 28px; }
+  .summary-field { min-width: 0; }
+  .summary-field > span {
+    display: block; margin-bottom: 5px;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted);
+  }
+  .summary-field .damage { font-size: 16px; font-weight: 650; }
+
+  /* ---- One-line check sections ---- */
+  section.checks { padding: 0; }
+  section.checks summary {
+    padding: 14px 24px; cursor: pointer;
+    font-size: 13.5px; font-weight: 600;
+    list-style: none;
+  }
+  section.checks summary::-webkit-details-marker { display: none; }
+  /* Caret drawn by hand so it can rotate when the section opens */
+  section.checks summary::before {
+    content: "\25B8"; display: inline-block; width: 14px;
+    color: var(--muted); transition: transform .15s;
+  }
+  section.checks details[open] > summary::before { transform: rotate(90deg); }
+  section.checks details[open] > summary { border-bottom: 1px solid var(--line-soft); }
+  section.checks dl { padding: 16px 24px 18px; }
+  /* A failed check keeps the section open and flags it in red */
+  section.checks.failed { border-color: var(--bad-line); background: #fffbfb; }
+  section.checks.failed summary { color: var(--bad-text); }
+
+  /* ---- Collapsible tool output ---- */
+  .toggle {
+    margin: 8px 0 0; padding: 2px 10px;
+    font: inherit; font-size: 12px; font-weight: 600;
+    color: var(--muted); background: #f7f9fb;
+    border: 1px solid var(--line); border-radius: 5px; cursor: pointer;
+  }
+  .toggle:hover { color: var(--text); background: #eef1f5; }
+
+  /* ---- Trace timeline ---- */
+  #trace-meta { margin: -6px 0 20px; font-size: 13px; }
+  ol {
+    margin: 0; padding: 0 0 0 30px; list-style: none;
+    counter-reset: trace-step;
+    border-left: 2px solid var(--line-soft);
+  }
+  ol li {
+    counter-increment: trace-step;
+    position: relative;
+    margin-bottom: 22px;
+  }
+  ol li:last-child { margin-bottom: 0; }
+  /* Numbered node sitting on the timeline rail */
+  ol li::before {
+    content: counter(trace-step);
+    position: absolute; left: -41px; top: 0;
+    width: 22px; height: 22px;
+    font-size: 11.5px; font-weight: 700; color: var(--muted);
+    background: var(--card); border: 1px solid var(--line); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-type {
+    display: inline-block; padding: 1px 9px; margin-right: 2px;
+    font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .07em;
+    color: var(--accent); background: #e8effa;
+    border: 1px solid #c9d7f2; border-radius: 4px;
+  }
+  ol li > div:first-child { color: var(--muted); font-size: 13px; }
+  ol li > div:nth-child(2) { margin-top: 5px; }
+
+  /* ---- Preformatted payloads ---- */
+  pre {
+    margin: 8px 0 0; padding: 11px 13px;
+    background: #f7f9fb; border: 1px solid var(--line-soft); border-radius: 7px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5; color: #2b3542;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 320px; overflow: auto;
+  }
+
+  .hidden { display: none; }
+
+  @media (max-width: 620px) {
+    body { padding: 24px 14px 48px; }
+    section { padding: 18px 16px; }
+    dl { grid-template-columns: 1fr; gap: 0; }
+    dt { padding-bottom: 0; }
+    dl > dt:first-child + dd { padding-top: 4px; }
+    dd { border-top: 0; padding-top: 2px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Claim Triage Assistant</h1>
+  <p class="lead">Submit an insurance claim and inspect the agent's assessment and reasoning trace.</p>
+
+  <section>
+    <h2>New claim</h2>
+    <form id="claim-form">
+      <label for="description">Description</label>
+      <textarea id="description" name="description"
+                placeholder="Describe the incident..."></textarea>
+
+      <label for="policy_type">Policy type</label>
+      <select id="policy_type" name="policy_type">
+        <option value="basic_homeowner">basic_homeowner</option>
+        <option value="standard_homeowner" selected>standard_homeowner</option>
+        <option value="premium_homeowner">premium_homeowner</option>
+        <option value="renters">renters</option>
+        <option value="landlord">landlord</option>
+      </select>
+
+      <label for="images">Images <span class="hint">(JPEG/PNG, one or more)</span></label>
+      <input type="file" id="images" name="images" accept="image/jpeg,image/png" multiple>
+
+      <label for="document">Supporting document <span class="hint">(optional PDF)</span></label>
+      <input type="file" id="document" name="document" accept="application/pdf">
+
+      <button type="submit" id="submit">Run triage</button>
+    </form>
+  </section>
+
+  <section id="status" class="hidden">
+    <h2>Status</h2>
+    <p id="status-text"></p>
+  </section>
+
+  <section id="error-box" class="hidden error">
+    <h2>Error</h2>
+    <p id="error-message"></p>
+    <ul id="error-reasons" class="reasons hidden"></ul>
+    <details id="error-technical" class="hidden">
+      <summary>Show technical details</summary>
+      <pre id="error-detail"></pre>
+    </details>
+  </section>
+
+  <section id="summary-box" class="hidden">
+    <h2>Summary</h2>
+    <div id="summary"></div>
+  </section>
+
+  <section id="assessment-box" class="hidden">
+    <h2>Details</h2>
+    <dl id="assessment"></dl>
+  </section>
+
+  <section id="intake-box" class="hidden checks">
+    <details id="intake-details">
+      <summary id="intake-summary">Intake</summary>
+      <dl id="intake"></dl>
+    </details>
+  </section>
+
+  <section id="safety-box" class="hidden checks">
+    <details id="safety-details">
+      <summary id="safety-summary">Safety</summary>
+      <dl id="safety"></dl>
+    </details>
+  </section>
+
+  <section id="trace-box" class="hidden">
+    <h2>Agent trace</h2>
+    <p id="trace-meta" class="lead"></p>
+    <ol id="trace"></ol>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+var API = "http://localhost:8000/api/v1";
+
+var form = document.getElementById("claim-form");
+var submitButton = document.getElementById("submit");
+
+// Keys whose value is rendered as pretty-printed JSON rather than plain text.
+function renderValue(value) {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "pass" : "FAIL";
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  return String(value);
+}
+
+// --- Specialised renderers for the assessment keys ---------------------------
+
+// Green for the calmest level, amber in the middle, red for the worst ones.
+var LEVEL_CLASS = {
+  low: "low", minor: "low",
+  medium: "mid", moderate: "mid",
+  high: "high", critical: "high", severe: "high", catastrophic: "high"
+};
+
+function renderLevel(value) {
+  var tag = document.createElement("span");
+  var key = String(value).toLowerCase();
+  tag.className = "level " + (LEVEL_CLASS[key] || "mid");
+  tag.textContent = value;
+  return tag;
+}
+
+function formatAmount(amount) {
+  return Number(amount).toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+// {min, max, currency} becomes "$4,000 - $16,000 USD" (en dash between bounds).
+function renderCost(cost) {
+  var span = document.createElement("span");
+  span.className = "money";
+  span.textContent = "$" + formatAmount(cost.min) + " – $" + formatAmount(cost.max) +
+    (cost.currency ? " " + cost.currency : "");
+  return span;
+}
+
+function renderPills(areas) {
+  var wrap = document.createElement("div");
+  wrap.className = "pills";
+  areas.forEach(function (area) {
+    var pill = document.createElement("span");
+    pill.className = "pill";
+    pill.textContent = area;
+    wrap.appendChild(pill);
+  });
+  return wrap;
+}
+
+function renderClaimsTable(claims) {
+  var table = document.createElement("table");
+  table.className = "claims";
+
+  var headRow = document.createElement("tr");
+  ["Claim ID", "Similarity", "Resolution"].forEach(function (text) {
+    var th = document.createElement("th");
+    th.textContent = text;
+    headRow.appendChild(th);
+  });
+  table.appendChild(document.createElement("thead")).appendChild(headRow);
+
+  var body = document.createElement("tbody");
+  claims.forEach(function (claim) {
+    var row = document.createElement("tr");
+
+    var id = document.createElement("td");
+    id.className = "claim-id";
+    id.textContent = claim.claim_id || "-";
+    row.appendChild(id);
+
+    var score = document.createElement("td");
+    score.className = "score";
+    // Scores arrive as a 0-1 ratio; show them as a whole percentage.
+    score.textContent = typeof claim.similarity_score === "number"
+      ? Math.round(claim.similarity_score * 100) + "%"
+      : "-";
+    row.appendChild(score);
+
+    var summary = document.createElement("td");
+    summary.textContent = claim.resolution_summary || "-";
+    row.appendChild(summary);
+
+    body.appendChild(row);
+  });
+  table.appendChild(body);
+  return table;
+}
+
+// Returns a custom node for the keys we style, or null to fall back to the default.
+function renderAssessmentValue(key, value) {
+  if ((key === "urgency" || key === "severity") && typeof value === "string") {
+    return renderLevel(value);
+  }
+  if (key === "affected_areas" && Array.isArray(value)) {
+    return value.length ? renderPills(value) : null;
+  }
+  if (key === "estimated_repair_cost" && value && typeof value.min === "number") {
+    return renderCost(value);
+  }
+  if (key === "similar_past_claims" && Array.isArray(value)) {
+    return value.length ? renderClaimsTable(value) : null;
+  }
+  return null;
+}
+
+function label(key) {
+  return key.replace(/_/g, " ").replace(/^./, function (c) { return c.toUpperCase(); });
+}
+
+// Fill a <dl> with one row per key of the given object.
+// Fields already shown in the summary card, so the details list does not repeat them.
+var SUMMARY_FIELDS = [
+  "damage_type",
+  "severity",
+  "urgency",
+  "estimated_repair_cost",
+  "affected_areas",
+];
+
+function withoutSummaryFields(assessment) {
+  var rest = {};
+  Object.keys(assessment || {}).forEach(function (key) {
+    if (SUMMARY_FIELDS.indexOf(key) === -1) rest[key] = assessment[key];
+  });
+  return rest;
+}
+
+function fillDefinitionList(listId, data) {
+  var list = document.getElementById(listId);
+  list.textContent = "";
+  Object.keys(data || {}).forEach(function (key) {
+    var dt = document.createElement("dt");
+    dt.textContent = label(key);
+    var dd = document.createElement("dd");
+    var value = data[key];
+    var custom = renderAssessmentValue(key, value);
+    if (custom) {
+      dd.appendChild(custom);
+    } else if (value !== null && typeof value === "object") {
+      var pre = document.createElement("pre");
+      pre.textContent = renderValue(value);
+      dd.appendChild(pre);
+    } else {
+      // Booleans are shown as a green/red badge; other values as plain text.
+      if (typeof value === "boolean") {
+        var badge = document.createElement("span");
+        badge.className = value ? "badge ok" : "badge bad";
+        badge.textContent = renderValue(value);
+        dd.appendChild(badge);
+      } else {
+        dd.textContent = renderValue(value);
+      }
+    }
+    list.appendChild(dt);
+    list.appendChild(dd);
+  });
+}
+
+// Compact card repeating the headline fields of the assessment.
+function renderSummary(assessment) {
+  var box = document.getElementById("summary");
+  box.textContent = "";
+  if (!assessment) return false;
+
+  function field(name, node) {
+    if (!node) return;
+    var wrap = document.createElement("div");
+    wrap.className = "summary-field";
+    var caption = document.createElement("span");
+    caption.textContent = name;
+    wrap.appendChild(caption);
+    wrap.appendChild(node);
+    box.appendChild(wrap);
+  }
+
+  if (assessment.damage_type) {
+    var damage = document.createElement("div");
+    damage.className = "damage";
+    damage.textContent = label(assessment.damage_type);
+    field("Damage type", damage);
+  }
+  if (assessment.severity) field("Severity", renderLevel(assessment.severity));
+  if (assessment.urgency) field("Urgency", renderLevel(assessment.urgency));
+  var cost = assessment.estimated_repair_cost;
+  if (cost && typeof cost.min === "number") field("Estimated cost", renderCost(cost));
+  if (Array.isArray(assessment.affected_areas) && assessment.affected_areas.length) {
+    field("Affected areas", renderPills(assessment.affected_areas));
+  }
+  return box.childNodes.length > 0;
+}
+
+// Fill a check section and collapse it to a single "n/m passed" line.
+function fillChecks(name, listId, data) {
+  fillDefinitionList(listId, data);
+
+  var values = Object.keys(data || {}).map(function (key) { return data[key]; });
+  // null means the check was not evaluated, so it counts in neither total
+  var checks = values.filter(function (value) { return typeof value === "boolean"; });
+  var passed = checks.filter(Boolean).length;
+  var failed = passed < checks.length;
+
+  var line = name + ": " + passed + "/" + checks.length + " passed";
+  var skipped = values.length - checks.length;
+  if (skipped > 0) line += " (" + skipped + " not evaluated)";
+
+  document.getElementById(listId + "-summary").textContent = line;
+  // Failures open on their own so the offending check is visible immediately
+  document.getElementById(listId + "-details").open = failed;
+  document.getElementById(listId + "-box").classList.toggle("failed", failed);
+}
+
+function show(id, visible) {
+  document.getElementById(id).classList.toggle("hidden", !visible);
+}
+
+function setStatus(text) {
+  document.getElementById("status-text").textContent = text;
+  show("status", Boolean(text));
+}
+
+function clearResults() {
+  ["error-box", "summary-box", "assessment-box", "intake-box", "safety-box", "trace-box"].forEach(function (id) {
+    show(id, false);
+  });
+  show("error-technical", false);
+  show("error-reasons", false);
+}
+
+// Plain-language wording for each guardrail flag that can come back false.
+var CHECK_MESSAGES = {
+  is_property_damage: "This doesn't look like a property damage claim.",
+  is_valid_image: "The photo can't be used as evidence of the damage.",
+  no_pii_detected: "Please remove personal data (phone, email, ID) and try again.",
+  no_offensive_content: "The description contains offensive content."
+};
+
+var SAFETY_MESSAGE =
+  "The generated report did not pass our safety review, so it was not shown.";
+
+// One short sentence per failed check, in the order the API listed them.
+function errorReasons(status, body) {
+  if (!body || typeof body !== "object") return [];
+  if (status === 422 || body.safety_checks) return [SAFETY_MESSAGE];
+
+  var checks = body.intake_validation || {};
+  return Object.keys(checks)
+    .filter(function (key) { return checks[key] === false; })
+    .map(function (key) {
+      return CHECK_MESSAGES[key] || "The check “" + label(key) + "” did not pass.";
+    });
+}
+
+// Render a readable error: plain wording first, raw JSON collapsed underneath.
+function showError(message, body, status) {
+  var reasons = errorReasons(status, body);
+  document.getElementById("error-message").textContent = reasons.length
+    ? "We couldn't process this claim."
+    : message;
+
+  var list = document.getElementById("error-reasons");
+  list.textContent = "";
+  reasons.forEach(function (text) {
+    var item = document.createElement("li");
+    item.textContent = text;
+    list.appendChild(item);
+  });
+  show("error-reasons", reasons.length > 0);
+
+  var detail = document.getElementById("error-detail");
+  if (body !== undefined && body !== null && body !== "") {
+    detail.textContent = typeof body === "string" ? body : JSON.stringify(body, null, 2);
+    document.getElementById("error-technical").open = false;
+    show("error-technical", true);
+  }
+  show("error-box", true);
+
+  // A rejected claim still carries its guardrail results; show what we have.
+  if (body && typeof body === "object") {
+    if (body.intake_validation) {
+      fillChecks("Intake", "intake", body.intake_validation);
+      show("intake-box", true);
+    }
+    if (body.safety_checks) {
+      fillChecks("Safety", "safety", body.safety_checks);
+      show("safety-box", true);
+    }
+  }
+}
+
+function errorMessage(status, body) {
+  if (body && typeof body === "object") {
+    if (typeof body.message === "string") return status + ": " + body.message;
+    if (typeof body.detail === "string") return status + ": " + body.detail;
+    // FastAPI wraps HTTPException payloads in "detail"
+    if (body.detail && typeof body.detail.message === "string") {
+      return status + ": " + body.detail.message;
+    }
+  }
+  return "Request failed with status " + status + ".";
+}
+
+function renderTrace(trace) {
+  var meta = [];
+  if (trace.steps) meta.push(trace.steps.length + " steps");
+  if (typeof trace.total_duration_ms === "number") meta.push(trace.total_duration_ms + " ms");
+  document.getElementById("trace-meta").textContent = meta.join(" - ");
+
+  var list = document.getElementById("trace");
+  list.textContent = "";
+  (trace.steps || []).forEach(function (step) {
+    var item = document.createElement("li");
+
+    var head = document.createElement("div");
+    var type = document.createElement("span");
+    type.className = "step-type";
+    type.textContent = step.type || "step";
+    head.appendChild(type);
+    if (step.tool_name) {
+      head.appendChild(document.createTextNode(" - " + step.tool_name));
+    }
+    item.appendChild(head);
+
+    if (step.content) {
+      var content = document.createElement("div");
+      content.textContent = step.content;
+      item.appendChild(content);
+    }
+    if (step.tool_output !== undefined) {
+      // The raw JSON stays available, but collapsed so the timeline reads cleanly.
+      var pre = document.createElement("pre");
+      pre.textContent = renderValue(step.tool_output);
+      pre.classList.add("hidden");
+
+      var toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "toggle";
+      toggle.textContent = "show output";
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.addEventListener("click", function () {
+        var open = pre.classList.toggle("hidden") === false;
+        toggle.textContent = open ? "hide output" : "show output";
+        toggle.setAttribute("aria-expanded", String(open));
+      });
+
+      item.appendChild(toggle);
+      item.appendChild(pre);
+    }
+    list.appendChild(item);
+  });
+  show("trace-box", true);
+}
+
+// Read a JSON body when there is one, falling back to raw text.
+async function readBody(response) {
+  var text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    return text;
+  }
+}
+
+form.addEventListener("submit", async function (event) {
+  event.preventDefault();
+  clearResults();
+  setStatus("Running triage, this can take a while...");
+  submitButton.disabled = true;
+
+  try {
+    var body = new FormData();
+    body.append("description", document.getElementById("description").value);
+    body.append("policy_type", document.getElementById("policy_type").value);
+    Array.prototype.forEach.call(document.getElementById("images").files, function (file) {
+      body.append("images", file);
+    });
+    var pdf = document.getElementById("document").files[0];
+    if (pdf) body.append("document", pdf);
+
+    var response = await fetch(API + "/claims/triage", { method: "POST", body: body });
+    var payload = await readBody(response);
+
+    if (!response.ok) {
+      setStatus("");
+      showError(errorMessage(response.status, payload), payload, response.status);
+      return;
+    }
+
+    show("summary-box", renderSummary(payload.triage_assessment));
+    fillDefinitionList("assessment", withoutSummaryFields(payload.triage_assessment));
+    show("assessment-box", true);
+    fillChecks("Intake", "intake", payload.intake_validation);
+    show("intake-box", true);
+    fillChecks("Safety", "safety", payload.safety_checks);
+    show("safety-box", true);
+
+    setStatus("Claim " + payload.claim_id + " - loading the agent trace...");
+    var traceResponse = await fetch(API + "/agent/trace/" + payload.claim_id);
+    var trace = await readBody(traceResponse);
+    if (traceResponse.ok) {
+      renderTrace(trace);
+      setStatus("Done. Claim " + payload.claim_id + ".");
+    } else {
+      setStatus("Done. Claim " + payload.claim_id + ".");
+      showError(errorMessage(traceResponse.status, trace), trace, traceResponse.status);
+    }
+  } catch (err) {
+    setStatus("");
+    showError("Could not reach the API at " + API + ".", String(err));
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
